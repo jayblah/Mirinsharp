@@ -94,6 +94,7 @@ namespace ShineCommon
         public static bool Attack = true;
         public static bool DisableNextAttack;
         public static bool Move = true;
+        public static bool Move2 = false;
         public static int LastMoveCommandT;
         public static Vector3 LastMoveCommandPosition = Vector3.Zero;
         private static AttackableUnit _lastTarget;
@@ -260,12 +261,7 @@ namespace ShineCommon
                 return false;
             }
 
-            if (_missileLaunched && Orbwalker.MissileCheck)
-            {
-                return true;
-            }
-
-            return NoCancelChamps.Contains(Player.ChampionName) || (Utils.GameTimeTickCount + Game.Ping / 2 >= LastAATick + Player.AttackCastDelay * 1000 + extraWindup);
+            return NoCancelChamps.Contains(Player.ChampionName) || (Utils.GameTimeTickCount + Game.Ping / 2 >= LastAATick + Player.AttackCastDelay * 1000 + extraWindup + (Move2 ? 250 : 0));
         }
 
         public static void SetMovementDelay(int delay)
@@ -364,12 +360,9 @@ namespace ShineCommon
                             LastAATick = Utils.GameTimeTickCount + Game.Ping + 400 - (int)(ObjectManager.Player.AttackCastDelay * 1000f);
                         }
                     }
-                    
-                    if (!Player.IssueOrder(GameObjectOrder.AttackUnit, target))
-                    {
-                        ResetAutoAttackTimer();
-                    }
 
+                    Player.IssueOrder(GameObjectOrder.AttackUnit, target);
+                    
                     _lastTarget = target;
                     return;
                 }

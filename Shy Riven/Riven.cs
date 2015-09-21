@@ -19,6 +19,7 @@ namespace ShyRiven
         }
         public SpellSlot SummonerFlash = ObjectManager.Player.GetSpellSlot("summonerflash");
 
+        private Dictionary<string, StringList> ComboMethodBackup = new Dictionary<string, StringList>();
         public Riven()
             : base("Riven")
         {
@@ -41,8 +42,17 @@ namespace ShyRiven
 
             Menu comboType = new Menu("Combo Methods", "combomethod");
             foreach (var enemy in HeroManager.Enemies)
-                comboType.AddItem(new MenuItem(String.Format("CMETHOD{0}", enemy.ChampionName), enemy.ChampionName).SetValue(new StringList(new string[] { "Normal", "Shy Burst", "Flash Combo" })));
-
+            {
+                ComboMethodBackup.Add(String.Format("CMETHOD{0}", enemy.ChampionName), new StringList(new string[] { "Normal", "Shy Burst", "Flash Combo" }));
+                comboType.AddItem(new MenuItem(String.Format("CMETHOD{0}", enemy.ChampionName), enemy.ChampionName).SetValue(new StringList(new string[] { "Normal", "Shy Burst", "Flash Combo" })))
+                    .ValueChanged += (s, ar) =>
+                        {
+                            if(!comboType.Item("CSHYKEY").GetValue<KeyBind>().Active && !comboType.Item("CFLASHKEY").GetValue<KeyBind>().Active)
+                                ComboMethodBackup[((MenuItem)s).Name] = ar.GetNewValue<StringList>();
+                        };
+            }
+            comboType.AddItem(new MenuItem("CSHYKEY", "Set All Shy Burst While Pressing Key").SetValue(new KeyBind('T', KeyBindType.Press)));
+            comboType.AddItem(new MenuItem("CFLASHKEY", "Set All Flash Combo While Pressing Key").SetValue(new KeyBind('Z', KeyBindType.Press)));
             combo.AddSubMenu(comboType);
             
 
@@ -87,8 +97,8 @@ namespace ShyRiven
 
             Obj_AI_Hero.OnDamage += Animation.OnDamage;
             Obj_AI_Hero.OnPlayAnimation += Animation.OnPlay;
+            Obj_AI_Hero.OnIssueOrder += Animation.OnIssueOrder;
             Animation.OnAnimationCastable += Animation_OnAnimationCastable;
-            Spellbook.OnCastSpell += Spellbook_OnCastSpell;
             Game.OnWndProc += Game_OnWndProc;
         }
 
@@ -117,6 +127,44 @@ namespace ShyRiven
 
             if (Config.Item("MFLEEKEY").GetValue<KeyBind>().Active)
                 Flee();
+
+            
+            if (Config.Item("CSHYKEY").GetValue<KeyBind>().Active)
+            {
+                foreach (var enemy in HeroManager.Enemies)
+                {
+                    var typeVal = Config.Item(String.Format("CMETHOD{0}", enemy.ChampionName)).GetValue<StringList>();
+                    if (typeVal.SelectedIndex != 1)
+                    {
+                        typeVal.SelectedIndex = 1;
+                        Config.Item(String.Format("CMETHOD{0}", enemy.ChampionName)).SetValue(typeVal);
+                    }
+                }
+            }
+            else if (Config.Item("CFLASHKEY").GetValue<KeyBind>().Active)
+            {
+                foreach (var enemy in HeroManager.Enemies)
+                {
+                    var typeVal = Config.Item(String.Format("CMETHOD{0}", enemy.ChampionName)).GetValue<StringList>();
+                    if (typeVal.SelectedIndex != 2)
+                    {
+                        typeVal.SelectedIndex = 2;
+                        Config.Item(String.Format("CMETHOD{0}", enemy.ChampionName)).SetValue(typeVal);
+                    }
+                }
+            }
+            else
+            {
+                foreach (var enemy in HeroManager.Enemies)
+                {
+                    var typeVal = Config.Item(String.Format("CMETHOD{0}", enemy.ChampionName)).GetValue<StringList>();
+                    if (typeVal.SelectedIndex != ComboMethodBackup[String.Format("CMETHOD{0}", enemy.ChampionName)].SelectedIndex)
+                    {
+                        typeVal.SelectedIndex = ComboMethodBackup[String.Format("CMETHOD{0}", enemy.ChampionName)].SelectedIndex;
+                        Config.Item(String.Format("CMETHOD{0}", enemy.ChampionName)).SetValue(typeVal);
+                    }
+                }
+            }
         }
 
         public void BeforeDraw()
@@ -148,13 +196,14 @@ namespace ShyRiven
             {
                 if (Config.Item("LUSEQ").GetValue<bool>() && Spells[Q].IsReady())
                 {
-                    Orbwalker.SetAttack(false);
-                    Orbwalker.SetMovement(false);
                     Animation.SetAttack(true);
                     if (!IsDoingFastQ && minion.Distance(ObjectManager.Player.ServerPosition) > 150)
                         Spells[Q].Cast(minion.ServerPosition);
                     else
-                        ObjectManager.Player.IssueOrder(GameObjectOrder.AttackUnit, minion, false);
+                    {
+                        ShineCommon.Orbwalking.Move2 = true;
+                        ShineCommon.Orbwalking.ResetAutoAttackTimer();
+                    }
                     IsDoingFastQ = true;
                 }
 
@@ -179,7 +228,11 @@ namespace ShyRiven
                     var curSpot = WallJump.GetSpot(ObjectManager.Player.ServerPosition);
                     if (curSpot.Start != Vector3.Zero && Animation.QStacks == 2)
                     {
-                        Spells[E].Cast(curSpot.End);
+                        if (Spells[E].IsReady())
+                            Spells[E].Cast(curSpot.End);
+                        else
+                            if (Items.GetWardSlot() != null)
+                                Items.UseItem((int)Items.GetWardSlot().Id, curSpot.End);
                         Spells[Q].Cast(curSpot.End);
                         return;
                     }
@@ -211,13 +264,16 @@ namespace ShyRiven
                 if (t != null)
                 {
                     Target.Set(t);
-                    Orbwalker.SetAttack(false);
-                    Orbwalker.SetMovement(false);
+                    Program.Champion.Orbwalker.ForceTarget(t);
                     Animation.SetAttack(true);
                     if (!IsDoingFastQ && t.Distance(ObjectManager.Player.ServerPosition) > 150 + (ObjectManager.Player.HasBuff("RivenFengShuiEngine") ? 75 : 0))
                         Spells[Q].Cast(t.ServerPosition);
                     else
-                        ObjectManager.Player.IssueOrder(GameObjectOrder.AttackUnit, t, false);
+                    {
+                        ShineCommon.Orbwalking.Move2 = true;
+                        ShineCommon.Orbwalking.ResetAutoAttackTimer();
+                        ObjectManager.Player.IssueOrder(GameObjectOrder.AttackUnit, t);
+                    }
                     IsDoingFastQ = true;
                 }
             }
@@ -227,6 +283,8 @@ namespace ShyRiven
         {
             if (!ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Config.Item("CDISABLER").GetValue<bool>() && Spells[R].IsReady() && t.Distance(ObjectManager.Player.ServerPosition) < 350 && OrbwalkingActiveMode == OrbwalkingComboMode)
             {
+                if (ObjectManager.Player.ServerPosition.CountEnemiesInRange(400) > 1)
+                    return true;
                 switch (Config.Item("CR1MODE").GetValue<StringList>().SelectedIndex)
                 {
                     case 1: if (!(t.Health - CalculateComboDamage(t) - CalculateDamageR2(t) <= 0)) return false;
@@ -243,7 +301,6 @@ namespace ShyRiven
         {
             if (ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Config.Item("CDISABLER").GetValue<bool>() && Spells[R].IsReady() && t.Distance(ObjectManager.Player.ServerPosition) < 900 && OrbwalkingActiveMode == OrbwalkingComboMode)
             {
-                Console.WriteLine("Calc dmg {0}", CalculateDamageR2(t));
                 switch (Config.Item("CR2MODE").GetValue<StringList>().SelectedIndex)
                 {
                     case 1: if (!(t.Health - CalculateDamageR2(t) <= 0) || t.Distance(ObjectManager.Player.ServerPosition) > 600) return false;
@@ -294,7 +351,7 @@ namespace ShyRiven
         public double CalculateDamageR2(Obj_AI_Hero target)
         {
             if (Spells[R].IsReady())
-                return ObjectManager.Player.CalcDamage(target, Damage.DamageType.Physical, (new[] { 80, 120, 160 }[Spells[R].Level] + ObjectManager.Player.FlatPhysicalDamageMod * 0.6) * (100 - target.HealthPercent) * 0.0267d);
+                return ObjectManager.Player.CalcDamage(target, Damage.DamageType.Physical, (new[] { 0, 80, 120, 160 }[Spells[R].Level] + ObjectManager.Player.FlatPhysicalDamageMod * 0.6) * (100 - target.HealthPercent) * 0.0267d);
             return 0.0d;
         }
 
@@ -305,7 +362,7 @@ namespace ShyRiven
                 if (args.SData.IsAutoAttack())
                 {
                     Animation.SetLastAATick(Utils.TickCount);
-                    if (!ShineCommon.Orbwalking.Attack)
+                    if (IsDoingFastQ)
                         ShineCommon.Orbwalking.LastAATick = Environment.TickCount + Game.Ping / 2;
                 }
             }
@@ -325,15 +382,22 @@ namespace ShyRiven
 
         public override void AntiGapcloser_OnEnemyGapcloser(ActiveGapcloser gapcloser)
         {
+            if (!gapcloser.Sender.IsEnemy)
+                return;
+
             if (Spells[W].IsReady() && gapcloser.End.Distance(ObjectManager.Player.ServerPosition) <= Spells[W].Range && Config.Item("MANTIGAPW").GetValue<bool>())
                 Spells[W].Cast();
 
             if (Config.Item("MANTIGAPQ").GetValue<bool>() && Animation.QStacks == 2)
-                LeagueSharp.Common.Utility.DelayAction.Add((int)(gapcloser.End.Distance(gapcloser.Start) / gapcloser.Sender.Spellbook.GetSpell(gapcloser.Slot).SData.MissileSpeed * 1000f) - Game.Ping, () =>
-                    {
-                        ObjectManager.Player.Spellbook.CastSpell(SpellSlot.Trinket, ObjectManager.Player.ServerPosition + (gapcloser.End - gapcloser.Start).Normalized() * 40);
-                        Spells[Q].Cast(ObjectManager.Player.ServerPosition);
-                    });
+                if (gapcloser.Sender.Spellbook.GetSpell(gapcloser.Slot).SData.MissileSpeed != 0)
+                {
+                    LeagueSharp.Common.Utility.DelayAction.Add((int)(gapcloser.End.Distance(gapcloser.Start) / gapcloser.Sender.Spellbook.GetSpell(gapcloser.Slot).SData.MissileSpeed * 1000f) - Game.Ping, () =>
+                        {
+                            if (Items.GetWardSlot() != null)
+                                Items.UseItem((int)Items.GetWardSlot().Id, ObjectManager.Player.ServerPosition + (gapcloser.End - gapcloser.Start).Normalized() * 40);
+                            Spells[Q].Cast(ObjectManager.Player.ServerPosition);
+                        });
+                }
         }
 
         public void Game_OnWndProc(WndEventArgs args)
@@ -362,14 +426,6 @@ namespace ShyRiven
                 if(t != null)
                     ComboInstance.MethodsOnAnimation[Config.Item(String.Format("CMETHOD{0}", t.ChampionName)).GetValue<StringList>().SelectedIndex](t, animname);
             }
-        }
-
-        private void Spellbook_OnCastSpell(Spellbook sender, SpellbookCastSpellEventArgs args)
-        {
-            //block auto flashes if fail
-            if (args.Slot == SummonerFlash && OrbwalkingActiveMode == OrbwalkingComboMode)
-                if (args.EndPosition.IsWall())
-                    args.Process = false;
         }
     }
 }

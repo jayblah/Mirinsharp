@@ -76,27 +76,6 @@ namespace ShyRiven
                 }
                 else
                     LeagueSharp.Common.Utility.DelayAction.Add(1, () => OnAnimationCastable(args.Animation));
-
-                if (!s_DoAttack && args.Animation.Contains("Spell1"))
-                {
-                    Program.Champion.Orbwalker.SetAttack(true);
-                    Program.Champion.Orbwalker.SetMovement(true);
-                }
-
-                int oldqstack = QStacks;
-
-                if (args.Animation.Contains("Spell"))
-                {
-                    LeagueSharp.Common.Utility.DelayAction.Add(750, () =>
-                        {
-                            if (QStacks == oldqstack)
-                            {
-                                CanCastAnimation = true;
-                                Program.Champion.Orbwalker.SetAttack(true);
-                                Program.Champion.Orbwalker.SetMovement(true);
-                            }
-                        });
-                }
             }
         }
 
@@ -110,8 +89,8 @@ namespace ShyRiven
                     if (t != null && (Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingComboMode || Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingHarassMode))
                     {
                         Program.Champion.Spells[0].Cast(t.ServerPosition, true);
-                        Program.Champion.Orbwalker.SetAttack(false);
-                        Program.Champion.Orbwalker.SetMovement(false);
+                        ShineCommon.Orbwalking.ResetAutoAttackTimer();
+                        Program.Champion.Orbwalker.ForceTarget(t);
                     }
                     else if (Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingLaneClearMode)
                     {
@@ -119,8 +98,8 @@ namespace ShyRiven
                         if (minion != null)
                         {
                             Program.Champion.Spells[0].Cast(minion.ServerPosition, true);
-                            Program.Champion.Orbwalker.SetAttack(false);
-                            Program.Champion.Orbwalker.SetMovement(false);
+                            ShineCommon.Orbwalking.ResetAutoAttackTimer();
+                            Program.Champion.Orbwalker.ForceTarget(t);
                         }
                     }
 
@@ -133,6 +112,15 @@ namespace ShyRiven
             }
         }
 
+        public static void OnIssueOrder(Obj_AI_Base sender, GameObjectIssueOrderEventArgs args)
+        {
+            if (args.Order == GameObjectOrder.AttackUnit && Program.Champion.OrbwalkingActiveMode != Program.Champion.OrbwalkingNoneMode && Program.Champion.OrbwalkingActiveMode != Program.Champion.OrbwalkingLastHitMode)
+                ShineCommon.Orbwalking.Move2 = true;
+
+            if (args.Order == GameObjectOrder.MoveTo)
+                ShineCommon.Orbwalking.Move2 = false;
+        }
+
         public static void CancelAnimation()
         {
             Game.Say("/d");
@@ -141,13 +129,22 @@ namespace ShyRiven
             {
                 var minion = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, 250, MinionTypes.All, MinionTeam.NotAlly, MinionOrderTypes.MaxHealth).FirstOrDefault();
                 if (minion != null && s_DoAttack)
-                    ObjectManager.Player.IssueOrder(GameObjectOrder.AttackUnit, minion, false);
+                {
+                    ShineCommon.Orbwalking.Move2 = true;
+                    Program.Champion.Orbwalker.ForceTarget(minion);
+                    ObjectManager.Player.IssueOrder(GameObjectOrder.AttackUnit, minion);
+                }
             }
             else if (Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingHarassMode || Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingComboMode)
             {
                 var t = Target.Get(1000f);
                 if (t != null && s_DoAttack)
-                    ObjectManager.Player.IssueOrder(GameObjectOrder.AttackUnit, t, false);
+                {
+                    ShineCommon.Orbwalking.Move2 = true;
+                    Program.Champion.Orbwalker.ForceTarget(t);
+                    ShineCommon.Orbwalking.ResetAutoAttackTimer();
+                    ObjectManager.Player.IssueOrder(GameObjectOrder.AttackUnit, t);
+                }
             }
         }
 
@@ -160,9 +157,7 @@ namespace ShyRiven
         public static void SetAttack(bool b)
         {
             s_DoAttack = b;
-
-            Program.Champion.Orbwalker.SetAttack(!b);
-            Program.Champion.Orbwalker.SetMovement(!b);
+            ShineCommon.Orbwalking.Move2 = b;
         }
 
         public static bool CanAttack()
