@@ -51,8 +51,8 @@ namespace ShyRiven
                                 ComboMethodBackup[((MenuItem)s).Name] = ar.GetNewValue<StringList>();
                         };
             }
-            comboType.AddItem(new MenuItem("CSHYKEY", "Set All Shy Burst While Pressing Key").SetValue(new KeyBind('T', KeyBindType.Press)));
-            comboType.AddItem(new MenuItem("CFLASHKEY", "Set All Flash Combo While Pressing Key").SetValue(new KeyBind('Z', KeyBindType.Press)));
+            comboType.AddItem(new MenuItem("CSHYKEY", "Set All Shy Burst While Pressing Key").SetValue(new KeyBind('T', KeyBindType.Press))).Permashow();
+            comboType.AddItem(new MenuItem("CFLASHKEY", "Set All Flash Combo While Pressing Key").SetValue(new KeyBind('Z', KeyBindType.Press))).Permashow();
             combo.AddSubMenu(comboType);
             
 
@@ -62,7 +62,12 @@ namespace ShyRiven
 
             laneclear = new Menu("LaneClear/JungleClear", "laneclear");
             laneclear.AddItem(new MenuItem("LUSEQ", "Use Q").SetValue(true));
-            laneclear.AddItem(new MenuItem("LUSEW", "Use W").SetValue(true));
+            laneclear.AddItem(new MenuItem("LUSEW", "Use W").SetValue(true))
+                .ValueChanged += (s, ar) =>
+                    {
+                        laneclear.Item("LMINW").Show(ar.GetNewValue<bool>());
+                    };
+            laneclear.AddItem(new MenuItem("LMINW", "Min. Minion To W").SetValue(new Slider(1, 1, 6))).Show(laneclear.Item("LUSEW").GetValue<bool>());
             laneclear.AddItem(new MenuItem("LUSETIAMAT", "Use Tiamat/Hydra").SetValue(true));
 
             misc = new Menu("Misc", "misc");
@@ -140,6 +145,8 @@ namespace ShyRiven
                         Config.Item(String.Format("CMETHOD{0}", enemy.ChampionName)).SetValue(typeVal);
                     }
                 }
+                var target = Orbwalker.GetTarget();
+                ShineCommon.Orbwalking.Orbwalk(target, Game.CursorPos);
                 Combo();
             }
             else if (Config.Item("CFLASHKEY").GetValue<KeyBind>().Active)
@@ -153,6 +160,8 @@ namespace ShyRiven
                         Config.Item(String.Format("CMETHOD{0}", enemy.ChampionName)).SetValue(typeVal);
                     }
                 }
+                var target = Orbwalker.GetTarget();
+                ShineCommon.Orbwalking.Orbwalk(target, Game.CursorPos);
                 Combo();
             }
             else
@@ -331,7 +340,7 @@ namespace ShyRiven
         public override double CalculateAADamage(Obj_AI_Hero target, int aacount = 3)
         {
             double dmg = base.CalculateAADamage(target, aacount);
-            dmg += ObjectManager.Player.CalcDamage(target, Damage.DamageType.Physical, new[] { 0.2, 0.2, 0.25, 0.25, 0.25, 0.3, 0.3, 0.3, 0.35, 0.35, 0.35, 0.4, 0.4, 0.4, 0.45, 0.45, 0.45, 0.5 }[ObjectManager.Player.Level - 1] * (ObjectManager.Player.BaseAttackDamage + ObjectManager.Player.FlatPhysicalDamageMod) * 3);
+            dmg += ObjectManager.Player.CalcDamage(target, Damage.DamageType.Physical, new[] { 0.2, 0.2, 0.25, 0.25, 0.25, 0.3, 0.3, 0.3, 0.35, 0.35, 0.35, 0.4, 0.4, 0.4, 0.45, 0.45, 0.45, 0.5 }[ObjectManager.Player.Level - 1] * (ObjectManager.Player.BaseAttackDamage + ObjectManager.Player.FlatPhysicalDamageMod) * 5);
             return dmg;
         }
 

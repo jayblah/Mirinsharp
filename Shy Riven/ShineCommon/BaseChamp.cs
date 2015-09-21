@@ -297,6 +297,12 @@ namespace ShineCommon
             if (Items.CanUseItem(3153) && ObjectManager.Player.Distance(target, false) < 550)
                 dmg += ObjectManager.Player.GetItemDamage(target, Damage.DamageItems.Botrk); //botrk
 
+            if (Items.CanUseItem(3077))
+                dmg += ObjectManager.Player.GetItemDamage(target, Damage.DamageItems.Tiamat); //tiamat
+
+            if (Items.CanUseItem(3074))
+                dmg += ObjectManager.Player.GetItemDamage(target, Damage.DamageItems.Tiamat); //hydra
+
             if(Items.HasItem(3057))
                 dmg += ObjectManager.Player.CalcDamage(target, Damage.DamageType.Magical, ObjectManager.Player.BaseAttackDamage); //sheen
 

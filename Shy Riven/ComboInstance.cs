@@ -56,7 +56,7 @@ namespace ShyRiven
 
             GapCloseMethods[2] = new Action<Obj_AI_Hero>((t) =>
             {
-                if (Target.IsTargetFlashed() && Me.Config.Item("CUSEF").GetValue<bool>())
+                if (Target.IsTargetFlashed() && Me.Config.Item("CUSEF").GetValue<KeyBind>().Active)
                 {
                     if (t.Distance(ObjectManager.Player.ServerPosition) > 300 && t.Distance(ObjectManager.Player.ServerPosition) < 500 && Me.OrbwalkingActiveMode == Me.OrbwalkingComboMode)
                     {
