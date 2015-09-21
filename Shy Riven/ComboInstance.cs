@@ -83,6 +83,9 @@ namespace ShyRiven
                         for (int i = 0; i < GapCloseMethods.Length; i++)
                             GapCloseMethods[i](t);
 
+                        if (Utils.TickCount - Animation.LastQTick >= 2000 && Me.Spells[Q].IsReady())
+                            Me.Spells[Q].Cast(t.ServerPosition);
+
                         if (Me.CheckR1(t))
                             Me.Spells[R].Cast();
 

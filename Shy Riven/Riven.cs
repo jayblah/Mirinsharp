@@ -37,7 +37,7 @@ namespace ShyRiven
                     };
             combo.AddItem(new MenuItem("CR1MODE", "R1 Mode").SetValue(new StringList(new string[] { "Always", "If Killable With R2", "Smart" }))).Show(!combo.Item("CDISABLER").GetValue<bool>());
             combo.AddItem(new MenuItem("CR2MODE", "R2 Mode").SetValue(new StringList(new string[] { "Always", "If Killable", "If Out of Range" }, 1))).Show(!combo.Item("CDISABLER").GetValue<bool>());
-            combo.AddItem(new MenuItem("CEMODE", "E Mode").SetValue(new StringList(new string[] { "E to Enemy", "E to Cursor", "E to Flee", "Do Not Use E" }, 0)));
+            combo.AddItem(new MenuItem("CEMODE", "E Mode").SetValue(new StringList(new string[] { "E to enemy", "E Cursor Pos", "E to back off", "Dont Use E" }, 0)));
             combo.AddItem(new MenuItem("CUSEF", "Use Flash In Combo").SetValue(new KeyBind('G', KeyBindType.Toggle))).Permashow();
 
             Menu comboType = new Menu("Combo Methods", "combomethod");
@@ -57,7 +57,7 @@ namespace ShyRiven
             
 
             harass = new Menu("Harass", "harass");
-            harass.AddItem(new MenuItem("HEMODE", "E Mode").SetValue(new StringList(new string[] { "E to Enemy", "E to Cursor", "E to Flee", "Do Not Use E" }, 0)));
+            harass.AddItem(new MenuItem("HEMODE", "E Mode").SetValue(new StringList(new string[] { "E to enemy", "E Cursor Pos", "E to back off", "Dont Use E" }, 0)));
 
 
             laneclear = new Menu("LaneClear/JungleClear", "laneclear");
@@ -67,12 +67,12 @@ namespace ShyRiven
 
             misc = new Menu("Misc", "misc");
             misc.AddItem(new MenuItem("MFLEEKEY", "Flee Key").SetValue(new KeyBind('A', KeyBindType.Press)));
-            misc.AddItem(new MenuItem("MFLEEWJ", "Use Wall Jump While Fleeing").SetValue(true));
-            misc.AddItem(new MenuItem("MMINDIST", "Min. Distance to Gapclose").SetValue(new Slider(400, 250, 750)));
-            misc.AddItem(new MenuItem("MAUTOINTRW", "Interrupt Spells with W").SetValue(true));
-            misc.AddItem(new MenuItem("MAUTOINTRQ", "Try to Interrupt Spells with Ward & Q3").SetValue(true));
-            misc.AddItem(new MenuItem("MANTIGAPW", "Anti-Gapcloser with W").SetValue(true));
-            misc.AddItem(new MenuItem("MANTIGAPQ", "Try to Anti-Gapclose with Ward & Q3").SetValue(true));
+            misc.AddItem(new MenuItem("MFLEEWJ", "Use Wall Jump while flee").SetValue(true));
+            misc.AddItem(new MenuItem("MMINDIST", "Min. Distance to gapclose").SetValue(new Slider(300, 250, 750)));
+            misc.AddItem(new MenuItem("MAUTOINTRW", "Interrupt Spells With W").SetValue(true));
+            misc.AddItem(new MenuItem("MAUTOINTRQ", "Try Interrupt Spells With Ward & Q3").SetValue(true));
+            misc.AddItem(new MenuItem("MANTIGAPW", "Anti Gap Closer With W").SetValue(true));
+            misc.AddItem(new MenuItem("MANTIGAPQ", "Try Anti Gap Closer With Ward & Q3").SetValue(true));
             misc.AddItem(new MenuItem("DDRAWCOMBOMODE", "Draw Combo Mode").SetValue(true));
             misc.AddItem(new MenuItem("DDRAWDAMAGEINDC", "Draw Damage Indicator").SetValue(true))
                 .ValueChanged += (s, ar) =>
@@ -140,6 +140,7 @@ namespace ShyRiven
                         Config.Item(String.Format("CMETHOD{0}", enemy.ChampionName)).SetValue(typeVal);
                     }
                 }
+                Combo();
             }
             else if (Config.Item("CFLASHKEY").GetValue<KeyBind>().Active)
             {
@@ -152,6 +153,7 @@ namespace ShyRiven
                         Config.Item(String.Format("CMETHOD{0}", enemy.ChampionName)).SetValue(typeVal);
                     }
                 }
+                Combo();
             }
             else
             {
