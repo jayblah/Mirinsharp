@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using LeagueSharp;
 using LeagueSharp.Common;
-using ShineCommon;
 
 namespace ShyRiven
 {
@@ -98,25 +97,15 @@ namespace ShyRiven
                         var minion = MinionManager.GetMinions(400, MinionTypes.All, MinionTeam.NotAlly, MinionOrderTypes.MaxHealth).OrderBy(p => p.ServerPosition.Distance(ObjectManager.Player.ServerPosition)).FirstOrDefault();
                         if (minion != null)
                         {
-                            if (minion.Health <= args.Damage * 2 && minion.IsJungleMinion())
-                                SetAttack(false);
-                            else
-                            {
-                                Program.Champion.Spells[0].Cast(minion.ServerPosition, true);
-                                ShineCommon.Orbwalking.ResetAutoAttackTimer();
-                                Program.Champion.Orbwalker.ForceTarget(t);
-                            }
+                            Program.Champion.Spells[0].Cast(minion.ServerPosition, true);
+                            ShineCommon.Orbwalking.ResetAutoAttackTimer();
+                            Program.Champion.Orbwalker.ForceTarget(t);
                         }
                     }
+
                 }
                 else
                     SetAttack(false);
-
-                if (Program.Champion.Spells[0].IsReady() && Program.Champion.Config.Item("LSEMIQJUNG").GetValue<bool>() && Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingNoneMode)
-                {
-                    if (sender.IsJungleMinion())
-                        Program.Champion.Spells[0].Cast(sender.Position, true);
-                }
 
                 CanCastAnimation = true;
                 s_CheckAA = false;

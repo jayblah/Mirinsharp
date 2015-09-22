@@ -69,13 +69,10 @@ namespace ShyRiven
                     };
             laneclear.AddItem(new MenuItem("LMINW", "Min. Minion To W").SetValue(new Slider(1, 1, 6))).Show(laneclear.Item("LUSEW").GetValue<bool>());
             laneclear.AddItem(new MenuItem("LUSETIAMAT", "Use Tiamat/Hydra").SetValue(true));
-            laneclear.AddItem(new MenuItem("LSEMIQJUNG", "Semi-Q Jungle Clear").SetValue(true));
-            laneclear.AddItem(new MenuItem("LASTUSETIAMAT", "Use Tiamat/Hydra for Last Hitting"));
 
             misc = new Menu("Misc", "misc");
             misc.AddItem(new MenuItem("MFLEEKEY", "Flee Key").SetValue(new KeyBind('A', KeyBindType.Press)));
-            misc.AddItem(new MenuItem("MFLEEWJ", "Use Wall Jump while flee").SetValue(true)).Permashow();
-            misc.AddItem(new MenuItem("MKEEPQ", "Keep Q Alive (To Cursor Pos)").SetValue(false));
+            misc.AddItem(new MenuItem("MFLEEWJ", "Use Wall Jump while flee").SetValue(true));
             misc.AddItem(new MenuItem("MMINDIST", "Min. Distance to gapclose").SetValue(new Slider(300, 250, 750)));
             misc.AddItem(new MenuItem("MAUTOINTRW", "Interrupt Spells With W").SetValue(true));
             misc.AddItem(new MenuItem("MAUTOINTRQ", "Try Interrupt Spells With Ward & Q3").SetValue(true));
@@ -87,7 +84,6 @@ namespace ShyRiven
                     {
                         DamageIndicator.Enabled = ar.GetNewValue<bool>();
                     };
-
 
             Config.AddSubMenu(combo);
             Config.AddSubMenu(harass);
@@ -103,7 +99,6 @@ namespace ShyRiven
             OrbwalkingFunctions[OrbwalkingComboMode] += Combo;
             OrbwalkingFunctions[OrbwalkingHarassMode] += Combo; //same function because harass mode is just same combo w/o flash & r (which already implemented in combo)
             OrbwalkingFunctions[OrbwalkingLaneClearMode] += LaneClear;
-            OrbwalkingFunctions[OrbwalkingLastHitMode] += LastHit;
 
             Obj_AI_Hero.OnDamage += Animation.OnDamage;
             Obj_AI_Hero.OnPlayAnimation += Animation.OnPlay;
@@ -138,6 +133,7 @@ namespace ShyRiven
             if (Config.Item("MFLEEKEY").GetValue<KeyBind>().Active)
                 Flee();
 
+            
             if (Config.Item("CSHYKEY").GetValue<KeyBind>().Active)
             {
                 foreach (var enemy in HeroManager.Enemies)
@@ -152,7 +148,6 @@ namespace ShyRiven
                 var target = Orbwalker.GetTarget();
                 ShineCommon.Orbwalking.Orbwalk(target, Game.CursorPos);
                 Combo();
-                return;
             }
             else if (Config.Item("CFLASHKEY").GetValue<KeyBind>().Active)
             {
@@ -168,13 +163,9 @@ namespace ShyRiven
                 var target = Orbwalker.GetTarget();
                 ShineCommon.Orbwalking.Orbwalk(target, Game.CursorPos);
                 Combo();
-                return;
             }
             else
             {
-                if (OrbwalkingActiveMode == OrbwalkingNoneMode)
-                    ShineCommon.Orbwalking.Move2 = false;
-
                 foreach (var enemy in HeroManager.Enemies)
                 {
                     var typeVal = Config.Item(String.Format("CMETHOD{0}", enemy.ChampionName)).GetValue<StringList>();
@@ -185,9 +176,6 @@ namespace ShyRiven
                     }
                 }
             }
-
-            if (OrbwalkingActiveMode == OrbwalkingNoneMode && Config.Item("MKEEPQ").GetValue<bool>() && Animation.QStacks != 0 && Utils.TickCount - Animation.LastQTick >= 3500)
-                Spells[Q].Cast(Game.CursorPos);
         }
 
         public void BeforeDraw()
@@ -199,7 +187,7 @@ namespace ShyRiven
                     if (!enemy.IsDead && enemy.IsVisible)
                     {
                         var text_pos = Drawing.WorldToScreen(enemy.Position);
-                        Drawing.DrawText((int)text_pos.X - 20, (int)text_pos.Y + 35, System.Drawing.Color.Aqua, Config.Item(String.Format("CMETHOD{0}", enemy.ChampionName)).GetValue<StringList>().SelectedValue);
+                        Drawing.DrawText((int)text_pos.X - 20, (int)text_pos.Y + 35, System.Drawing.Color.Red, Config.Item(String.Format("CMETHOD{0}", enemy.ChampionName)).GetValue<StringList>().SelectedValue);
                     }
                 }
             }
@@ -210,8 +198,6 @@ namespace ShyRiven
             var t = Target.Get(600, true);
             if (t != null)
                 ComboInstance.MethodsOnUpdate[Config.Item(String.Format("CMETHOD{0}", t.ChampionName)).GetValue<StringList>().SelectedIndex](t);
-            else
-                ShineCommon.Orbwalking.Move2 = false;
         }
 
         public void LaneClear()
@@ -227,7 +213,6 @@ namespace ShyRiven
                     else
                     {
                         ShineCommon.Orbwalking.Move2 = true;
-                        Orbwalker.ForceTarget(minion);
                         ShineCommon.Orbwalking.ResetAutoAttackTimer();
                     }
                     IsDoingFastQ = true;
@@ -238,23 +223,6 @@ namespace ShyRiven
                     if (Config.Item("LUSETIAMAT").GetValue<bool>())
                         CastCrescent();
                     Spells[W].Cast();
-                }
-            }
-            else
-                ShineCommon.Orbwalking.Move2 = false;
-        }
-
-        public void LastHit()
-        {
-            if (Config.Item("LASTUSETIAMAT").GetValue<bool>() && IsCrestcentReady)
-            {
-                var minion = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, 400, MinionTypes.All, MinionTeam.NotAlly, MinionOrderTypes.MaxHealth).FirstOrDefault();
-                if (minion != null)
-                {
-                    float dist = minion.Distance(ObjectManager.Player.ServerPosition);
-                    double dmg = (ObjectManager.Player.BaseAttackDamage + ObjectManager.Player.FlatPhysicalDamageMod) * (1 - dist * 0.001);
-                    if (minion.Health <= dmg)
-                        CastCrescent();
                 }
             }
         }
@@ -394,7 +362,7 @@ namespace ShyRiven
         public double CalculateDamageR2(Obj_AI_Hero target)
         {
             if (Spells[R].IsReady())
-                return ObjectManager.Player.CalcDamage(target, Damage.DamageType.Physical, (new[] { 80, 120, 160 }[Spells[R].Level - 1] + ObjectManager.Player.FlatPhysicalDamageMod * 0.6) * (1 + ((100 - target.HealthPercent) > 75 ? 75 : (100 - target.HealthPercent)) * 0.0267d));
+                return ObjectManager.Player.CalcDamage(target, Damage.DamageType.Physical, (new[] { 0, 80, 120, 160 }[Spells[R].Level] + ObjectManager.Player.FlatPhysicalDamageMod * 0.6) * (100 - target.HealthPercent) * 0.0267d);
             return 0.0d;
         }
 
@@ -465,7 +433,7 @@ namespace ShyRiven
         {
             if (OrbwalkingActiveMode == OrbwalkingComboMode || OrbwalkingActiveMode == OrbwalkingHarassMode)
             {
-                var t = Target.Get(1000);
+                var t = Target.Get(900, true);
                 if(t != null)
                     ComboInstance.MethodsOnAnimation[Config.Item(String.Format("CMETHOD{0}", t.ChampionName)).GetValue<StringList>().SelectedIndex](t, animname);
             }

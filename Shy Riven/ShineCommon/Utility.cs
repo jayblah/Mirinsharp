@@ -74,7 +74,7 @@ namespace ShineCommon
             return 2;
         }
 
-        public static bool IsJungleMinion(this AttackableUnit unit)
+        public static bool IsJungleMinion(this Obj_AI_Base unit)
         {
             return JungleMinions.Contains(unit.Name);
         }

@@ -160,6 +160,8 @@ namespace ShyRiven
                         MethodsOnUpdate[0](t);
                         return;
                     }
+                    if ((!Me.Spells[E].IsReady() || !ObjectManager.Player.Spellbook.GetSpell(Me.SummonerFlash).IsReady()) && !ObjectManager.Player.HasBuff("RivenFengShuiEngine"))
+                        return;
 
                     t = Target.Get(1000, true);
                     if (t != null)
@@ -192,13 +194,17 @@ namespace ShyRiven
 
             MethodsOnAnimation[1] = (t, animname) =>
                 {
+                    if (!ObjectManager.Player.Spellbook.GetSpell(Me.SummonerFlash).IsReady() && !ObjectManager.Player.HasBuff("RivenFengShuiEngine"))
+                    {
+                        MethodsOnAnimation[0](t, animname);
+                        return;
+                    }
                     if (Me.OrbwalkingActiveMode == Me.OrbwalkingComboMode || Me.OrbwalkingActiveMode == Me.OrbwalkingHarassMode)
                     {
                         switch (animname)
                         {
                             case "Spell3": //e r1
                             {
-                                Game.PrintChat("ult {0}, disable r {1}, r isready {2}, orbwalker {3}", !ObjectManager.Player.HasBuff("RivenFengShuiEngine"), !Me.Config.Item("CDISABLER").GetValue<bool>(), Me.Spells[R].IsReady(), Me.OrbwalkingActiveMode == Me.OrbwalkingComboMode);
                                 if (!ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Me.Config.Item("CDISABLER").GetValue<bool>() && Me.Spells[R].IsReady() && Me.OrbwalkingActiveMode == Me.OrbwalkingComboMode)
                                     Me.Spells[R].Cast();
                             }
@@ -226,7 +232,6 @@ namespace ShyRiven
                         MethodsOnUpdate[0](t);
                         return;
                     }
-
                     t = Target.Get(1000);
                     if (Animation.QStacks == 2)
                     {
@@ -267,6 +272,11 @@ namespace ShyRiven
 
             MethodsOnAnimation[2] = (t, animname) =>
                 {
+                    if (!ObjectManager.Player.Spellbook.GetSpell(Me.SummonerFlash).IsReady() && !ObjectManager.Player.HasBuff("RivenFengShuiEngine"))
+                    {
+                        MethodsOnAnimation[0](t, animname);
+                        return;
+                    }
                     if (Me.OrbwalkingActiveMode == Me.OrbwalkingComboMode || Me.OrbwalkingActiveMode == Me.OrbwalkingHarassMode)
                     {
                         switch (animname)
