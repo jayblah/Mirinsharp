@@ -22,9 +22,6 @@ namespace ShyRiven
 
         static void Game_OnGameLoad(EventArgs args)
         {
-            if (ObjectManager.Player.ChampionName != "Riven")
-                return;
-
             Champion = new Riven();
 
             Champion.CreateConfigMenu();
