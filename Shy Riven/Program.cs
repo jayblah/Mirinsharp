@@ -22,9 +22,6 @@ namespace ShyRiven
 
         static void Game_OnGameLoad(EventArgs args)
         {
-            if (ObjectManager.Player.CharData.BaseSkinName != "Riven")
-                return;
-
             Champion = new Riven();
 
             Champion.CreateConfigMenu();

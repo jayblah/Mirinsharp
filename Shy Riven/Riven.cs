@@ -216,7 +216,7 @@ namespace ShyRiven
 
         public void LaneClear()
         {
-            var minion = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, 400, MinionTypes.All, MinionTeam.NotAlly, MinionOrderTypes.MaxHealth).FirstOrDefault();
+            var minion = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, 250, MinionTypes.All, MinionTeam.NotAlly, MinionOrderTypes.MaxHealth).FirstOrDefault();
             if (minion != null)
             {
                 if (Config.Item("LUSEQ").GetValue<bool>() && Spells[Q].IsReady())
@@ -233,7 +233,7 @@ namespace ShyRiven
                     IsDoingFastQ = true;
                 }
 
-                if (Config.Item("LUSEW").GetValue<bool>() && Spells[W].IsReady() && (ObjectManager.Get<Obj_AI_Minion>().Count(p => p.Distance(ObjectManager.Player.ServerPosition) <= Spells[W].Range) >= Config.Item("LMINW").GetValue<Slider>().Value || minion.IsJungleMinion()))
+                if (Config.Item("LUSEW").GetValue<bool>() && Spells[W].IsReady())
                 {
                     if (Config.Item("LUSETIAMAT").GetValue<bool>())
                         CastCrescent();
