@@ -261,7 +261,7 @@ namespace ShineCommon
                 return false;
             }
 
-            return NoCancelChamps.Contains(Player.ChampionName) || (Utils.GameTimeTickCount + Game.Ping / 2 >= LastAATick + Player.AttackCastDelay * 1000 + extraWindup + (Move2 ? 250 : 0));
+            return NoCancelChamps.Contains(Player.ChampionName) || (Utils.GameTimeTickCount + Game.Ping / 2 >= LastAATick + Player.AttackCastDelay * 1000 + extraWindup + (Move2 ? 200 : 0));
         }
 
         public static void SetMovementDelay(int delay)

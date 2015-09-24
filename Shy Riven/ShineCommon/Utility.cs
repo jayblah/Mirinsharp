@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -74,7 +75,7 @@ namespace ShineCommon
             return 2;
         }
 
-        public static bool IsJungleMinion(this Obj_AI_Base unit)
+        public static bool IsJungleMinion(this AttackableUnit unit)
         {
             return JungleMinions.Contains(unit.Name);
         }
@@ -105,10 +106,76 @@ namespace ShineCommon
             s.Cast();
         }
 
-        public static async Task DelayAction(Action act, int delay = 1)
+        public static class DelayAction
         {
-            System.Threading.Thread.Sleep(delay);
-            act();
+            public delegate void Callback();
+                
+            public static ConcurrentDictionary<string, Action> ActionList = new ConcurrentDictionary<string, Action>();
+
+            static DelayAction()
+            {
+                Game.OnUpdate += GameOnOnGameUpdate;
+            }
+
+            private static void GameOnOnGameUpdate(EventArgs args)
+            {
+                for (var i = ActionList.Count - 1; i >= 0; i--)
+                {
+                    if (ActionList.ElementAt(i).Value.Time <= Utils.GameTimeTickCount)
+                    {
+                        try
+                        {
+                            if (ActionList.ElementAt(i).Value.CallbackObject != null)
+                            {
+                                ActionList.ElementAt(i).Value.CallbackObject();
+                                //Will somehow result in calling ALL non-internal marked classes of the called assembly and causes NullReferenceExceptions.
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            // ignored
+                        }
+
+                        Action act;
+                        ActionList.TryRemove(ActionList.Keys.ElementAt(i), out act); //remove
+                    }
+                }
+            }
+
+            public static void Add(string name, int time, Callback func)
+            {
+                var action = new Action(time, func);
+                ActionList.TryAdd(name, action);
+            }
+
+            public static void Update(string name, int time)
+            {
+                Action act, act2;
+                if (ActionList.TryGetValue(name, out act))
+                {
+                    act2 = new Action(time, act.CallbackObject);
+                    ActionList.TryUpdate(name, act2, act);
+                }
+            }
+
+            public static bool Exists(string name)
+            {
+                Action act;
+                return ActionList.TryGetValue(name, out act);
+            }
+
+            public struct Action
+            {
+                public Callback CallbackObject;
+                public int Time;
+
+                public Action(int time, Callback callback)
+                {
+                    Time = time + Utils.GameTimeTickCount;
+                    CallbackObject = callback;
+                }
+            }
         }
+
     }
 }

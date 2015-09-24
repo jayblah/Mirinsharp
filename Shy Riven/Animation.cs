@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using LeagueSharp;
 using LeagueSharp.Common;
+using ShineCommon;
 
 namespace ShyRiven
 {
@@ -18,6 +19,7 @@ namespace ShyRiven
         public static int LastQTick = 0;
         public static bool CanCastAnimation = true;
         public static bool UltActive;
+        public static long blResetQueued;
 
         public delegate void dOnAnimationCastable(string animname);
         public static event dOnAnimationCastable OnAnimationCastable;
@@ -83,34 +85,92 @@ namespace ShyRiven
         {
             if (Utils.TickCount - s_LastAATick < 300 + Game.Ping && s_CheckAA && args.SourceNetworkId == ObjectManager.Player.NetworkId)
             {
-                var t = Target.Get(Program.Champion.Spells[0].Range + 50, true);
-                if (s_DoAttack && Program.Champion.Spells[0].IsReady())
+                if (Program.Champion.Spells[0].IsReady() && Program.Champion.Config.Item("LSEMIQJUNG").GetValue<bool>() && Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingNoneMode)
                 {
-                    if (t != null && (Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingComboMode || Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingHarassMode))
+                    Game.PrintChat("{0} is jungle mob ? {1}", sender.Name, sender.IsJungleMinion() ? "Yes": "Nope");
+                    if (sender.IsJungleMinion())
+                        Program.Champion.Spells[0].Cast(sender.Position);
+                }
+                //var t = Target.Get(Program.Champion.Spells[0].Range + 50, true);
+                //if (s_DoAttack && Program.Champion.Spells[0].IsReady())
+                //{
+                //    if (t != null && (Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingComboMode || Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingHarassMode))
+                //    {
+                //        Program.Champion.Spells[0].Cast(t.ServerPosition, true);
+                //        ShineCommon.Orbwalking.ResetAutoAttackTimer();
+                //        Program.Champion.Orbwalker.ForceTarget(t);
+                //    }
+                //    else if (Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingLaneClearMode)
+                //    {
+                //        var minion = MinionManager.GetMinions(400, MinionTypes.All, MinionTeam.NotAlly, MinionOrderTypes.MaxHealth).OrderBy(p => p.ServerPosition.Distance(ObjectManager.Player.ServerPosition)).FirstOrDefault();
+                //        if (minion != null)
+                //        {
+                //            if (minion.Health <= args.Damage * 2 && minion.IsJungleMinion())
+                //                SetAttack(false);
+                //            else
+                //            {
+                //                Program.Champion.Spells[0].Cast(minion.ServerPosition, true);
+                //                ShineCommon.Orbwalking.ResetAutoAttackTimer();
+                //                Program.Champion.Orbwalker.ForceTarget(t);
+                //            }
+                //        }
+                //    }
+                //}
+                //else
+                //    SetAttack(false);
+
+                //if (Program.Champion.Spells[0].IsReady() && Program.Champion.Config.Item("LSEMIQJUNG").GetValue<bool>() && Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingNoneMode)
+                //{
+                //    Game.PrintChat(sender.Name);
+                //    if (sender.IsJungleMinion())
+                //        Program.Champion.Spells[0].Cast(sender.Position, true);
+                //}
+
+                //CanCastAnimation = true;
+                //s_CheckAA = false;
+            }
+        }
+
+        public static void OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
+        {
+            if (sender.IsMe)
+            {
+                if (args.SData.IsAutoAttack() && s_CheckAA)
+                {
+                    Interlocked.Exchange(ref Animation.blResetQueued, 0);
+                    s_CheckAA = false;
+                    CanCastAnimation = true;
+
+                    var t = Target.Get(Program.Champion.Spells[0].Range + 50, true);
+                    if (s_DoAttack && Program.Champion.Spells[0].IsReady())
                     {
-                        Program.Champion.Spells[0].Cast(t.ServerPosition, true);
-                        ShineCommon.Orbwalking.ResetAutoAttackTimer();
-                        Program.Champion.Orbwalker.ForceTarget(t);
-                    }
-                    else if (Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingLaneClearMode)
-                    {
-                        var minion = MinionManager.GetMinions(400, MinionTypes.All, MinionTeam.NotAlly, MinionOrderTypes.MaxHealth).OrderBy(p => p.ServerPosition.Distance(ObjectManager.Player.ServerPosition)).FirstOrDefault();
-                        if (minion != null)
+                        if (t != null && (Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingComboMode || Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingHarassMode))
                         {
-                            Program.Champion.Spells[0].Cast(minion.ServerPosition, true);
+                            Program.Champion.Spells[0].Cast(t.ServerPosition + (t.ServerPosition - ObjectManager.Player.ServerPosition).Normalized() * 40);
                             ShineCommon.Orbwalking.ResetAutoAttackTimer();
                             Program.Champion.Orbwalker.ForceTarget(t);
                         }
+                        else if (Program.Champion.OrbwalkingActiveMode == Program.Champion.OrbwalkingLaneClearMode)
+                        {
+                            var minion = MinionManager.GetMinions(400, MinionTypes.All, MinionTeam.NotAlly, MinionOrderTypes.MaxHealth).OrderBy(p => p.ServerPosition.Distance(ObjectManager.Player.ServerPosition)).FirstOrDefault();
+                            if (minion != null)
+                            {
+                                if (minion.Health <= ObjectManager.Player.GetAutoAttackDamage(minion) * 2 && minion.IsJungleMinion())
+                                    SetAttack(false);
+                                else
+                                {
+                                    Program.Champion.Spells[0].Cast(minion.ServerPosition);
+                                    ShineCommon.Orbwalking.ResetAutoAttackTimer();
+                                    Program.Champion.Orbwalker.ForceTarget(t);
+                                }
+                            }
+                        }
                     }
-
+                    else
+                        SetAttack(false);
                 }
-                else
-                    SetAttack(false);
-
-                CanCastAnimation = true;
-                s_CheckAA = false;
             }
-        }
+        } 
 
         public static void OnIssueOrder(Obj_AI_Base sender, GameObjectIssueOrderEventArgs args)
         {

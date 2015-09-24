@@ -83,11 +83,12 @@ namespace ShyRiven
                         for (int i = 0; i < GapCloseMethods.Length; i++)
                             GapCloseMethods[i](t);
 
-                        if (Utils.TickCount - Animation.LastQTick >= 2000 && Me.Spells[Q].IsReady())
-                            Me.Spells[Q].Cast(t.ServerPosition);
-
                         if (Me.CheckR1(t))
+                        {
+                            if (Me.Spells[E].IsReady())
+                                Me.Spells[E].Cast(t.ServerPosition);
                             Me.Spells[R].Cast();
+                        }
 
                         if (Me.CheckR2(t))
                             Me.Spells[R].Cast(t.ServerPosition);
@@ -112,6 +113,12 @@ namespace ShyRiven
                         {
                             if (animname == "Spell3") //e w & e q etc
                             {
+                                if (Me.CheckR1(t))
+                                {
+                                    Me.Spells[R].Cast();
+                                    return;
+                                }
+
                                 if (Me.Spells[W].IsReady() && t.Distance(ObjectManager.Player.ServerPosition) < Me.Spells[W].Range && !Me.IsDoingFastQ)
                                 {
                                     Me.Spells[W].Cast();
@@ -160,16 +167,14 @@ namespace ShyRiven
                         MethodsOnUpdate[0](t);
                         return;
                     }
-                    if ((!Me.Spells[E].IsReady() || !ObjectManager.Player.Spellbook.GetSpell(Me.SummonerFlash).IsReady()) && !ObjectManager.Player.HasBuff("RivenFengShuiEngine"))
-                        return;
 
-                    t = Target.Get(1000, true);
+                    t = Target.Get(1200, true);
                     if (t != null)
                     {
                         if (Me.Spells[E].IsReady() && !ObjectManager.Player.HasBuff("RivenFengShuiEngine"))
                         {
                             Me.Spells[E].Cast(t.ServerPosition);
-                            if (!Me.Config.Item("CDISABLER").GetValue<bool>() && Me.Spells[R].IsReady() && Me.OrbwalkingActiveMode == Me.OrbwalkingComboMode)
+                            if (!Me.Config.Item("CDISABLER").GetValue<bool>() && Me.Spells[R].IsReady())
                                 Me.Spells[R].Cast();
                             return;
                         }
@@ -183,39 +188,31 @@ namespace ShyRiven
 
                         if (ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Me.Config.Item("CDISABLER").GetValue<bool>())
                         {
-                            if (Me.OrbwalkingActiveMode == Me.OrbwalkingComboMode && Me.Spells[R].IsReady())
+                            if (Me.Spells[R].IsReady())
                                 Me.Spells[R].Cast(t.ServerPosition);
                             Me.FastQCombo();
-                            Program.Champion.Orbwalker.SetAttack(true);
-                            Program.Champion.Orbwalker.SetMovement(true);
+                            ShineCommon.Orbwalking.Move2 = false;
                         }
                     }
                 };
 
             MethodsOnAnimation[1] = (t, animname) =>
                 {
-                    if (!ObjectManager.Player.Spellbook.GetSpell(Me.SummonerFlash).IsReady() && !ObjectManager.Player.HasBuff("RivenFengShuiEngine"))
-                    {
-                        MethodsOnAnimation[0](t, animname);
-                        return;
-                    }
-                    if (Me.OrbwalkingActiveMode == Me.OrbwalkingComboMode || Me.OrbwalkingActiveMode == Me.OrbwalkingHarassMode)
                     {
                         switch (animname)
                         {
                             case "Spell3": //e r1
                             {
-                                if (!ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Me.Config.Item("CDISABLER").GetValue<bool>() && Me.Spells[R].IsReady() && Me.OrbwalkingActiveMode == Me.OrbwalkingComboMode)
+                                if (!ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Me.Config.Item("CDISABLER").GetValue<bool>() && Me.Spells[R].IsReady())
                                     Me.Spells[R].Cast();
                             }
                             break;
                             case "Spell4a": //r flash
                             {
-                                if (t.Distance(ObjectManager.Player.ServerPosition) > 300 && Me.OrbwalkingActiveMode == Me.OrbwalkingComboMode)
+                                if (t.Distance(ObjectManager.Player.ServerPosition) > 300)
                                 {
                                     ObjectManager.Player.Spellbook.CastSpell(Me.SummonerFlash, t.ServerPosition);
-                                    Program.Champion.Orbwalker.SetAttack(false);
-                                    Program.Champion.Orbwalker.SetMovement(false);
+                                    ShineCommon.Orbwalking.Move2 = true;
                                 }
                             }
                             break;
@@ -232,6 +229,7 @@ namespace ShyRiven
                         MethodsOnUpdate[0](t);
                         return;
                     }
+
                     t = Target.Get(1000);
                     if (Animation.QStacks == 2)
                     {
@@ -255,7 +253,7 @@ namespace ShyRiven
                                         Me.Spells[W].Cast();
                                 }
                                 else
-                                    if (ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Me.Config.Item("CDISABLER").GetValue<bool>() && Me.Spells[R].IsReady() && Me.OrbwalkingActiveMode == Me.OrbwalkingComboMode)
+                                    if (ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Me.Config.Item("CDISABLER").GetValue<bool>() && Me.Spells[R].IsReady())
                                         Me.Spells[R].Cast(t.ServerPosition);
                             }
                         }
@@ -272,18 +270,12 @@ namespace ShyRiven
 
             MethodsOnAnimation[2] = (t, animname) =>
                 {
-                    if (!ObjectManager.Player.Spellbook.GetSpell(Me.SummonerFlash).IsReady() && !ObjectManager.Player.HasBuff("RivenFengShuiEngine"))
-                    {
-                        MethodsOnAnimation[0](t, animname);
-                        return;
-                    }
-                    if (Me.OrbwalkingActiveMode == Me.OrbwalkingComboMode || Me.OrbwalkingActiveMode == Me.OrbwalkingHarassMode)
                     {
                         switch (animname)
                         {
                             case "Spell3": //e r1
                             {
-                                if (!ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Me.Config.Item("CDISABLER").GetValue<bool>() && Me.Spells[R].IsReady() && Me.OrbwalkingActiveMode == Me.OrbwalkingComboMode)
+                                if (!ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Me.Config.Item("CDISABLER").GetValue<bool>() && Me.Spells[R].IsReady())
                                     Me.Spells[R].Cast();
                             }
                             break;
@@ -298,7 +290,7 @@ namespace ShyRiven
                             break;
                             case "Spell2": //w r2
                             {
-                                if (ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Me.Config.Item("CDISABLER").GetValue<bool>() && Me.Spells[R].IsReady() && Me.OrbwalkingActiveMode == Me.OrbwalkingComboMode)
+                                if (ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Me.Config.Item("CDISABLER").GetValue<bool>() && Me.Spells[R].IsReady())
                                     Me.Spells[R].Cast(t.ServerPosition);
                             }
                             break;
