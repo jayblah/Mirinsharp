@@ -679,6 +679,15 @@ namespace ShineCommon
                                 GetAADamage(minion));
             }
 
+            public AttackableUnit GetForcedTarget()
+            {
+                if (_forcedTarget != null && _forcedTarget.IsValidTarget() && InAutoAttackRange(_forcedTarget))
+                {
+                    return _forcedTarget;
+                }
+                return null;
+            }
+
             public virtual AttackableUnit GetTarget()
             {
                 AttackableUnit result = null;

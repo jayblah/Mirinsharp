@@ -408,7 +408,7 @@ namespace ShyRiven
                     Animation.SetLastAATick(Utils.TickCount);
                 }
             }
-            else if (Target.Get(1000, true) != null && Target.Get(1000, true).NetworkId == sender.NetworkId)
+            else if (Target.Get(1000, true) != null)
             {
                 if (args.SData.Name == "summonerflash")
                     if (args.End.Distance(ObjectManager.Player.ServerPosition) > 300 && args.End.Distance(ObjectManager.Player.ServerPosition) < 500 && !Spells[E].IsReady())
@@ -417,7 +417,7 @@ namespace ShyRiven
         }
 
         public override void Orbwalking_BeforeAttack(ShineCommon.Orbwalking.BeforeAttackEventArgs args)
-        {
+        {            
             if (IsDoingFastQ)
             {
                 ShineCommon.Orbwalking.LastAATick = Environment.TickCount + Game.Ping / 2;
