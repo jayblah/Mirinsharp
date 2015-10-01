@@ -51,7 +51,7 @@ namespace ShineCommon
                     evade.AddItem(new MenuItem(spell.SpellName, String.Format("{0} ({1})", spell.ChampionName, spell.Slot)).SetValue(true));
             }
 
-            evade.AddItem(new MenuItem("EVADEMETHOD", "Evade Method: ").SetValue(new StringList(new[] { "Near Turret", "Less Enemies", "Auto" }, 2)));
+            evade.AddItem(new MenuItem("EVADEMETHOD", "Evade Method: ").SetValue(new StringList(new[] { "Towards Turret", "Towards Fewer Enemies", "Auto" }, 2)));
             evade.AddItem(new MenuItem("EVADEENABLE", "Enabled").SetValue(false));
 
             if (method.HasFlag(EvadeMethods.MorganaE) || method.HasFlag(EvadeMethods.KayleR))
