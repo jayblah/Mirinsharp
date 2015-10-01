@@ -23,7 +23,7 @@ namespace ShineCommon.Activator
                 summoners = new Menu("Ignite", "summonerignite");
                 summoners.AddItem(new MenuItem("IGNITEENEMY", "Use Ignite")).SetValue(true);
 
-                summoners.AddItem(new MenuItem("IGNITEKS", "Use Ignite for KS")).SetValue(true)
+                summoners.AddItem(new MenuItem("IGNITEKS", "Use Ignite to KS")).SetValue(true)
                             .ValueChanged += (s, ar) =>
                             {
                                 bool newVal = ar.GetNewValue<bool>();
@@ -31,7 +31,7 @@ namespace ShineCommon.Activator
                             };
 
                 summoners.AddItem(new MenuItem("IGNITEENABLE", "Enabled").SetValue<KeyBind>(new KeyBind(32, KeyBindType.Press)));
-                summoners.Item("IGNITEKS").Permashow(true, "Ignite Kill Steal");
+                summoners.Item("IGNITEKS").Permashow(true, "Ignite Killsteal");
                 activator.AddSubMenu(summoners);
             }
         }
