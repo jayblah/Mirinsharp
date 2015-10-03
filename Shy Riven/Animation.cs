@@ -63,7 +63,7 @@ namespace ShyRiven
                         UltActive = true;
                         break;
                     case "Spell4b":
-                        t = 150;
+                        t = 0;
                         CanCastAnimation = false;
                         UltActive = false;
                         break;

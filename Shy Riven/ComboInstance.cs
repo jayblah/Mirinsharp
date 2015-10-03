@@ -100,7 +100,8 @@ namespace ShyRiven
                         }
                     }
 
-                    if (!Animation.CanAttack() && Animation.CanCastAnimation && !Me.Spells[W].IsReady())
+                    //PATCH WARNING
+                    if (!Animation.CanAttack() && Animation.CanCastAnimation && !Me.Spells[W].IsReady() && !Me.CheckR1(t))
                         Me.FastQCombo();
                 };
 
@@ -125,16 +126,11 @@ namespace ShyRiven
                                     return;
                                 }
 
-                                if (Me.Spells[Q].IsReady() && !Me.IsDoingFastQ && t.Distance(ObjectManager.Player.ServerPosition) < Me.Spells[Q].Range)
+                                //PATCH WARNING
+                                if (Me.Spells[Q].IsReady() && !Me.IsDoingFastQ && !Me.CheckR1(t) && t.Distance(ObjectManager.Player.ServerPosition) < Me.Spells[Q].Range)
                                 {
                                     Me.Spells[Q].Cast();
                                     Me.FastQCombo();
-                                    return;
-                                }
-
-                                if (Me.CheckR1(t))
-                                {
-                                    Me.Spells[R].Cast();
                                     return;
                                 }
                             }
@@ -168,7 +164,7 @@ namespace ShyRiven
                         return;
                     }
 
-                    t = Target.Get(1200, true);
+                    t = Target.Get(1300, true);
                     if (t != null)
                     {
                         if (Me.Spells[E].IsReady() && !ObjectManager.Player.HasBuff("RivenFengShuiEngine"))
@@ -188,7 +184,7 @@ namespace ShyRiven
 
                         if (ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Me.Config.Item("CDISABLER").GetValue<bool>())
                         {
-                            if (Me.Spells[R].IsReady())
+                            if (Me.Spells[R].IsReady()) //r2
                                 Me.Spells[R].Cast(t.ServerPosition);
                             Me.FastQCombo();
                             ShineCommon.Orbwalking.Move2 = false;
@@ -198,25 +194,29 @@ namespace ShyRiven
 
             MethodsOnAnimation[1] = (t, animname) =>
                 {
+                    if (!ObjectManager.Player.Spellbook.GetSpell(Me.SummonerFlash).IsReady() && !ObjectManager.Player.HasBuff("RivenFengShuiEngine"))
                     {
-                        switch (animname)
+                        MethodsOnUpdate[0](t);
+                        return;
+                    }
+
+                    switch (animname)
+                    {
+                        case "Spell3": //e r1
                         {
-                            case "Spell3": //e r1
-                            {
-                                if (!ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Me.Config.Item("CDISABLER").GetValue<bool>() && Me.Spells[R].IsReady())
-                                    Me.Spells[R].Cast();
-                            }
-                            break;
-                            case "Spell4a": //r flash
-                            {
-                                if (t.Distance(ObjectManager.Player.ServerPosition) > 300)
-                                {
-                                    ObjectManager.Player.Spellbook.CastSpell(Me.SummonerFlash, t.ServerPosition);
-                                    ShineCommon.Orbwalking.Move2 = true;
-                                }
-                            }
-                            break;
+                            if (!ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Me.Config.Item("CDISABLER").GetValue<bool>() && Me.Spells[R].IsReady())
+                                Me.Spells[R].Cast();
                         }
+                        break;
+                        case "Spell4a": //r flash
+                        {
+                            if (t.Distance(ObjectManager.Player.ServerPosition) > 300)
+                            {
+                                ObjectManager.Player.Spellbook.CastSpell(Me.SummonerFlash, t.ServerPosition);
+                                ShineCommon.Orbwalking.Move2 = true;
+                            }
+                        }
+                        break;
                     }
                 };
             #endregion
