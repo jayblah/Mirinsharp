@@ -17,6 +17,11 @@ namespace ShyRiven
         {
             get { return (Items.HasItem(3077) && Items.CanUseItem(3077)) || (Items.HasItem(3074) && Items.CanUseItem(3074)); }
         }
+        /*PBE*/
+        /*public int EdgeCount
+        {
+            get { return 0; }
+        }*/
         public SpellSlot SummonerFlash = ObjectManager.Player.GetSpellSlot("summonerflash");
 
         private Dictionary<string, StringList> ComboMethodBackup = new Dictionary<string, StringList>();
@@ -286,6 +291,8 @@ namespace ShyRiven
                         ObjectManager.Player.IssueOrder(GameObjectOrder.MoveTo, spot.Start);
                         return;
                     }
+                    else
+                        Spells[E].Cast(Game.CursorPos);
                 }
             }
             else
@@ -325,10 +332,11 @@ namespace ShyRiven
 
         public bool CheckR1(Obj_AI_Hero t)
         {
-            if (!ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Config.Item("CDISABLER").GetValue<bool>() && Spells[R].IsReady() && t.Distance(ObjectManager.Player.ServerPosition) < 350 && OrbwalkingActiveMode == OrbwalkingComboMode)
+            if (!ObjectManager.Player.HasBuff("RivenFengShuiEngine") && !Config.Item("CDISABLER").GetValue<bool>() && Spells[R].IsReady() && t.Distance(ObjectManager.Player.ServerPosition) < 500 && OrbwalkingActiveMode == OrbwalkingComboMode)
             {
-                if (ObjectManager.Player.ServerPosition.CountEnemiesInRange(400) > 1)
+                if (ObjectManager.Player.ServerPosition.CountEnemiesInRange(500) > 1)
                     return true;
+
                 switch (Config.Item("CR1MODE").GetValue<StringList>().SelectedIndex)
                 {
                     case 1: if (!(t.Health - CalculateComboDamage(t) - CalculateDamageR2(t) <= 0)) return false;
@@ -370,10 +378,17 @@ namespace ShyRiven
             }
         }
 
+        /*
+         * PBE
+        public override double CalculateSpellDamage(Obj_AI_Hero target)
+        {
+            return (CalculateDamageQ(target) + CalculateDamageW(target) + CalculateDamageE(target) + CalculateDamageR(target)) * (1 + EdgeCount * 0.001);
+        }
+        */
         public override double CalculateAADamage(Obj_AI_Hero target, int aacount = 3)
         {
-            double dmg = base.CalculateAADamage(target, aacount);
-            dmg += ObjectManager.Player.CalcDamage(target, Damage.DamageType.Physical, new[] { 0.2, 0.2, 0.25, 0.25, 0.25, 0.3, 0.3, 0.3, 0.35, 0.35, 0.35, 0.4, 0.4, 0.4, 0.45, 0.45, 0.45, 0.5 }[ObjectManager.Player.Level - 1] * (ObjectManager.Player.BaseAttackDamage + ObjectManager.Player.FlatPhysicalDamageMod) * 5);
+            double dmg = base.CalculateAADamage(target, aacount);                                                                                                                                                                                                                                                               /*          PBE            */
+            dmg += ObjectManager.Player.CalcDamage(target, Damage.DamageType.Physical, new[] { 0.2, 0.2, 0.25, 0.25, 0.25, 0.3, 0.3, 0.3, 0.35, 0.35, 0.35, 0.4, 0.4, 0.4, 0.45, 0.45, 0.45, 0.5 }[ObjectManager.Player.Level - 1] * (ObjectManager.Player.BaseAttackDamage + ObjectManager.Player.FlatPhysicalDamageMod) * 5) /** (1 + EdgeCount * 0.001)*/;
             return dmg;
         }
 
@@ -396,6 +411,8 @@ namespace ShyRiven
         {
             if (Spells[R].IsReady())
                 return ObjectManager.Player.CalcDamage(target, Damage.DamageType.Physical, (new[] { 80, 120, 160 }[Spells[R].Level - 1] + ObjectManager.Player.FlatPhysicalDamageMod * 0.6) * (1 + ((100 - target.HealthPercent) > 75 ? 75 : (100 - target.HealthPercent)) * 0.0267d));
+                /*PBE*/
+                /*return ObjectManager.Player.CalcDamage(target, Damage.DamageType.Physical, (new[] { 80, 120, 160 }[Spells[R].Level - 1] + ObjectManager.Player.FlatPhysicalDamageMod * 0.6) * (1 + EdgeCount * 0.0267d));*/
             return 0.0d;
         }
 
@@ -406,6 +423,8 @@ namespace ShyRiven
                 if (args.SData.IsAutoAttack())
                 {
                     Animation.SetLastAATick(Utils.TickCount);
+                    if(IsDoingFastQ)
+                        ShineCommon.Orbwalking.LastAATick = Environment.TickCount + Game.Ping / 2;
                 }
             }
             else if (Target.Get(1000, true) != null)
@@ -420,7 +439,7 @@ namespace ShyRiven
         {            
             if (IsDoingFastQ)
             {
-                ShineCommon.Orbwalking.LastAATick = Environment.TickCount + Game.Ping / 2;
+                //ShineCommon.Orbwalking.LastAATick = Environment.TickCount + Game.Ping / 2;
                 if (!ShineCommon.Utility.DelayAction.Exists("rivenaa"))
                 {
                     if (Interlocked.Read(ref Animation.blResetQueued) == 0)

@@ -714,7 +714,7 @@ namespace ShyRiven
 
         public static PositionStruct GetNearest(Vector3 pos)
         {
-            foreach (var spot in Spots.OrderBy(p => p.Start.Distance(pos)))
+            foreach (var spot in Spots.Where(p => (pos - ObjectManager.Player.ServerPosition).To2D().Normalized().AngleBetween((p.Start - ObjectManager.Player.ServerPosition).To2D()) < 90).OrderBy(q => q.Start.Distance(pos)))
             {
                 int steps = (int)(spot.Start.Distance(ObjectManager.Player.ServerPosition) / 10);
                 Vector3 direction = (spot.Start - ObjectManager.Player.ServerPosition).Normalized();
